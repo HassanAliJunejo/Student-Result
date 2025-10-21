@@ -1,189 +1,116 @@
-<!-- <!doctype html>
+<!doctype html>
 <html lang="ur" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roll-wise Results Viewer — HTML + CSS</title>
+  <title>Web Dev Test Results</title>
   <style>
-    /* Simple modern styling — aap apni repaint kar sakte hain */
-    :root{ --bg:#0f1724; --card:#0b1220; --accent:#06b6d4; --glass: rgba(255,255,255,0.04); }
-    *{box-sizing:border-box; font-family: 'Noto Nastaliq Urdu', 'Noto Sans', system-ui, sans-serif}
-    html,body{height:100%; margin:0; background:linear-gradient(180deg,#071028 0%, #071a2a 100%); color:#e6f0f6}
-    .wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px}
-    .board{width:100%; max-width:920px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; box-shadow:0 10px 30px rgba(2,6,23,0.6); padding:20px}
+    :root {
+      --primary: #2563eb;
+      --secondary: #1e293b;
+      --bg: #0f172a;
+      --text: #f1f5f9;
+      --card: #1e293b;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; font-family: 'Noto Naskh Arabic', system-ui, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
 
-    header{display:flex; align-items:center; justify-content:space-between; gap:16px}
-    h1{font-size:20px; margin:0; color:var(--accent)}
-    .controls{display:flex; gap:8px}
-    button{background:var(--glass); color:inherit; border:1px solid rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px; cursor:pointer}
-    button.primary{background:linear-gradient(90deg,var(--accent), #7dd3fc); color:#002028; font-weight:700}
+    .container { width: 100%; max-width: 900px; background: var(--card); border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); overflow: hidden; }
 
-    .viewer{margin-top:18px; min-height:360px; display:flex; gap:16px}
-    .list{width:320px; max-height:420px; overflow:auto; background:rgba(255,255,255,0.02); border-radius:8px; padding:12px}
-    .card{padding:10px; border-radius:8px; margin-bottom:10px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); display:flex; justify-content:space-between; align-items:center; gap:8px}
-    .card strong{display:block}
+    header { background: var(--primary); color: white; text-align: center; padding: 16px 0; font-size: 24px; font-weight: 700; }
 
-    .detail{flex:1; background:rgba(255,255,255,0.02); border-radius:8px; padding:18px; display:flex; flex-direction:column; justify-content:center; align-items:center}
-    .student-name{font-size:28px; margin-bottom:6px}
-    .meta{display:flex; gap:14px; margin-bottom:10px}
-    .meta div{background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:8px}
-    .progress{width:100%; height:12px; background:rgba(255,255,255,0.04); border-radius:999px; overflow:hidden}
-    .progress > i{display:block; height:100%; background:linear-gradient(90deg,var(--accent), #60a5fa); width:0%}
+    main { padding: 20px; }
 
-    .welcome-overlay{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(90deg, rgba(2,6,23,0.85), rgba(2,6,23,0.92)); z-index:40}
-    .welcome-box{background:rgba(255,255,255,0.02); padding:28px 32px; border-radius:12px; text-align:center}
-    .welcome-box h2{margin:0 0 6px 0; color:var(--accent)}
-    .small{opacity:0.8; font-size:14px}
+    .student-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s, background 0.3s; }
+    .student-card:hover { transform: translateY(-2px); background: rgba(56,189,248,0.1); }
 
-    footer{margin-top:14px; text-align:center; opacity:0.8; font-size:13px}
+    .student-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .student-info strong { font-size: 18px; color: var(--accent); }
 
-    @media (max-width:800px){ .viewer{flex-direction:column} .list{width:100%; max-height:180px} }
+    .marks { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .mark-box { background: rgba(255,255,255,0.05); padding: 10px 16px; border-radius: 8px; }
+
+    .status { text-align: center; margin-top: 8px; font-weight: 600; }
+
+    @media (max-width: 600px) {
+      header { font-size: 20px; }
+      .student-info strong { font-size: 16px; }
+    }
+
+    /* Welcome screen */
+    .welcome { position: fixed; inset: 0; background: rgba(15,23,42,0.95); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .welcome-box { background: var(--card); padding: 32px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    .welcome-box h2 { color: var(--accent); margin-bottom: 8px; }
+    .welcome-box button { background: var(--accent); border: none; padding: 10px 24px; border-radius: 8px; color: #0f172a; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="board">
-      <header>
-        <h1>خوش آمدید — Results Viewer</h1>
-        <div class="controls">
-          <button id="prevBtn">پچھلا</button>
-          <button id="playBtn" class="primary">شروع کریں</button>
-          <button id="nextBtn">اگلا</button>
-        </div>
-      </header>
-
-      <div class="viewer">
-        <div class="list" id="list"></div>
-
-        <div class="detail" id="detail">
-          <div class="student-name" id="sname">Roll No —</div>
-          <div class="meta">
-            <div>HTML: <strong id="htmlMark">-</strong></div>
-            <div>CSS: <strong id="cssMark">-</strong></div>
-            <div>Total: <strong id="total">-</strong></div>
-          </div>
-          <div class="progress" aria-hidden><i id="prog"></i></div>
-          <div style="margin-top:12px" id="status"></div>
-        </div>
-      </div>
-
-      <footer>
-        Best OF Luck 😊     </footer>
+  <div class="welcome" id="welcome">
+    <div class="welcome-box">
+      <h2>خوش آمدید!</h2>
+      <p>یہ ویب سائٹ آپ کے HTML اور CSS کے نتائج دکھائے گی۔</p>
+      <button id="startBtn">شروع کریں</button>
     </div>
   </div>
 
-  <div class="welcome-overlay" id="welcome">
-    <div class="welcome-box">
-      <h2>Assalam-o-Alaikum! — خوش آمدید</h2>
-      <p class="small">Is page ko kholte hi result roll number ke mutabiq aik aik karke dikhaye jayenge.</p>
-      <p style="margin-top:14px"><button id="startNow" class="primary">Ab Shuru Karein</button></p>
-    </div>
+  <div class="container" id="resultsContainer" style="display:none;">
+    <header>Web Development Test Results</header>
+    <main id="resultsList"></main>
   </div>
 
   <script>
-    /***** Data: yahan apne students ke results daalein. *****/
-    // Har student object: { roll: number, name: string, html: number, css: number }
     const students = [
-      { roll: 1, name: 'Shakir Hasan', html: 78, css: 82 },
-      { roll: 2, name: 'Siddique Raza', html: 65, css: 72 },
-      { roll: 3, name: 'Tufail Raza', html: 88, css: 91 },
-      { roll: 4, name: 'Muhammad Atif', html: 45, css: 51 },
-      { roll: 5, name: 'Abrar Ahmed', html: 45, css: 51 },
-      { roll: 6, name: 'Muhammad Shahroz', html: 45, css: 51 },
-      { roll: 7, name: 'Muhammad Roshan', html: 45, css: 51 },
-      
+      { roll: 1, name: 'Shakir Hasan', html: 41, css: 28 },
+      { roll: 2, name: 'Siddique Raza', html: 41, css: 26 },
+      { roll: 3, name: 'Tufail Raza', html: 40, css: 36 },
+      { roll: 4, name: 'Muhammad Atif', html: 27, css: 20 },
+      { roll: 5, name: 'Abrar Ahmed', html: 48, css: 38 },
+      { roll: 6, name: 'Muhammad Shahroz', html: 35, css: 24 },
+      { roll: 7, name: 'Muhammad Roshan', html: 41, css: 26 },
+      { roll: 8, name: 'Waseem Raza', html: 44, css: 28 },
+     ];
 
-    ];
+    const container = document.getElementById('resultsContainer');
+    const list = document.getElementById('resultsList');
+    const welcome = document.getElementById('welcome');
 
-    // Configuration: auto-play delay (ms). Change as needed.
-    const SHOW_DELAY = 3000;
-
-    // Internal state
-    let index = 0;
-    let timer = null;
-    let playing = false;
-
-    // Sort by roll number ascending and compute totals
-    const data = students.slice().sort((a,b)=> a.roll - b.roll).map(s => ({
-      ...s,
-      total: (s.html ?? 0) + (s.css ?? 0),
-      percent: Math.round(((s.html ?? 0) + (s.css ?? 0)) / 200 * 100)
-    }));
-
-    // UI refs
-    const listEl = document.getElementById('list');
-    const sname = document.getElementById('sname');
-    const htmlMark = document.getElementById('htmlMark');
-    const cssMark = document.getElementById('cssMark');
-    const totalEl = document.getElementById('total');
-    const prog = document.getElementById('prog');
-    const status = document.getElementById('status');
-
-    // Render list
-    function renderList(){
-      listEl.innerHTML = '';
-      data.forEach((s,i)=>{
-        const el = document.createElement('div');
-        el.className = 'card';
-        el.innerHTML = `<div style="text-align:right"><strong>نام: ${escapeHtml(s.name)}</strong><div class="small">Roll: ${s.roll}</div></div><div><div class="small">Total: ${s.total}</div></div>`;
-        el.addEventListener('click', ()=>{ showIndex(i); stopAuto(); });
-        listEl.appendChild(el);
-      });
-    }
-
-    // Show single student by index
-    function showIndex(i){
-      if(i < 0) i = 0;
-      if(i >= data.length) i = data.length -1;
-      index = i;
-      const s = data[index];
-      sname.textContent = `${s.name} — Roll ${s.roll}`;
-      htmlMark.textContent = s.html;
-      cssMark.textContent = s.css;
-      totalEl.textContent = `${s.total} (${s.percent}%)`;
-      prog.style.width = Math.min(s.percent, 100) + '%';
-      status.textContent = s.percent >= 50 ? 'Result: Passed' : 'Result: Failed';
-
-      // Highlight selected in list
-      Array.from(listEl.children).forEach((c,ci)=> c.style.outline = ci===index ? '2px solid rgba(96,165,250,0.2)' : 'none');
-    }
-
-    function escapeHtml(text){ return String(text).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-
-    // Auto play
-    function startAuto(){
-      if(playing) return;
-      playing = true; document.getElementById('playBtn').textContent = 'Rokain';
-      timer = setInterval(()=>{
-        index = (index + 1) % data.length;
-        showIndex(index);
-      }, SHOW_DELAY);
-    }
-    function stopAuto(){
-      playing = false; document.getElementById('playBtn').textContent = 'شروع کریں';
-      if(timer) clearInterval(timer); timer = null;
-    }
-    function toggleAuto(){ playing ? stopAuto() : startAuto(); }
-
-    // Buttons
-    document.getElementById('nextBtn').addEventListener('click', ()=>{ stopAuto(); showIndex(index+1); });
-    document.getElementById('prevBtn').addEventListener('click', ()=>{ stopAuto(); showIndex(index-1); });
-    document.getElementById('playBtn').addEventListener('click', ()=>{ toggleAuto(); });
-
-    // Welcome overlay
-    document.getElementById('startNow').addEventListener('click', ()=>{
-      document.getElementById('welcome').style.display = 'none';
-      showIndex(0);
-      startAuto();
+    document.getElementById('startBtn').addEventListener('click', () => {
+      welcome.style.display = 'none';
+      container.style.display = 'block';
+      showResults();
     });
 
-    // Initial render
-    renderList();
-    showIndex(0);
+    function showResults() {
+      students.sort((a,b)=>a.roll-b.roll);
+      let i = 0;
+      function showNext() {
+        if (i >= students.length) return;
+        const s = students[i];
+        const total = s.html + s.css;
+        const percent = Math.round(total / 100 * 50);
+        const status = percent >= 20 ? '✅ Passed' : '❌ Failed';
 
-    // OPTIONAL: If you have results in CSV or JSON format, replace the `students` array above or
-    // implement a fetch to load a file. This simple single-file solution keeps everything offline.
-
+        const card = document.createElement('div');
+        card.className = 'student-card';
+        card.innerHTML = `
+          <div class="student-info">
+            <strong>${s.name}</strong>
+            <span>Roll #: ${s.roll}</span>
+          </div>
+          <div class="marks">
+            <div class="mark-box">HTML: ${s.html}</div>
+            <div class="mark-box">CSS: ${s.css}</div>
+            <div class="mark-box">Total: ${total} (${percent}%)</div>
+          </div>
+          <div class="status">${status}</div>
+        `;
+        list.appendChild(card);
+        i++;
+        setTimeout(showNext, 20000);
+      }
+      showNext();
+    }
   </script>
 </body>
-</html> -->
+</html>
